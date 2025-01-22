@@ -41,4 +41,4 @@ All releases prior to v.1.0.0 are frontend-only, and your data will be saved in 
 
 ## License
 
-This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International [Licence](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International [License](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
