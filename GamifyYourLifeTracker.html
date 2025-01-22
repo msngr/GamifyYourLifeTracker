@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="./favicon/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="./favicon/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="./favicon/favicon-16x16.png"
+        />
+        <link rel="manifest" href="./favicon/site.webmanifest" />
+        <meta charset="UTF-8" />
+        <title>Life Tracker</title>
+        <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            /* Add custom button styles */
+            .point-button {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding-left: 1rem;
+                padding-right: 1rem;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+                border-radius: 0.5rem;
+                font-size: 0.875rem;
+                transition-property: all;
+                transition-duration: 200ms;
+                background-color: rgb(229 231 235);
+                color: rgb(55 65 81);
+                border: 1px solid rgb(209 213 219);
+                box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            }
+
+            .point-button-add {
+                background-color: rgb(209 250 229);
+                color: rgb(4 120 87);
+                border-color: rgb(167 243 208);
+            }
+            .point-button-subtract {
+                background-color: rgb(255 228 230);
+                color: rgb(185 28 28);
+                border-color: rgb(254 205 211);
+            }
+
+            /* Updated progress gradient colors with proper stops */
+            .progress-gradient {
+                background: linear-gradient(
+                    90deg,
+                    rgb(239, 68, 68) 0%,
+                    rgb(239, 68, 68) 10%,
+                    rgb(249, 115, 22) 20%,
+                    rgb(249, 115, 22) 30%,
+                    rgb(234, 179, 8) 40%,
+                    rgb(234, 179, 8) 50%,
+                    rgb(132, 204, 22) 60%,
+                    rgb(132, 204, 22) 70%,
+                    rgb(34, 197, 94) 80%,
+                    rgb(34, 197, 94) 90%,
+                    rgb(34, 197, 94) 100%
+                );
+            }
+
+            /* Add drag and drop styles */
+            .draggable {
+                cursor: move;
+            }
+
+            .drag-over {
+                border: 2px dashed #4b5563;
+                opacity: 0.5;
+            }
+
+            .ghost {
+                opacity: 0.4;
+                background: #e5e7eb;
+            }
+            .drag-over-category {
+                border: 2px dashed #4b5563;
+                opacity: 0.5;
+                background-color: #f3f4f6;
+            }
+
+            /* Add custom input focus styles */
+            input:focus,
+            select:focus {
+                outline: none;
+                border-color: rgb(34, 197, 94);
+                box-shadow: 0 0 0 1px rgb(34, 197, 94);
+            }
+
+            /* Add pointer cursor to add buttons */
+            .add-button {
+                cursor: pointer;
+            }
+
+            html {
+                overflow-y: scroll;
+                /* Prevent layout shift by keeping scrollbar always visible */
+                scrollbar-gutter: stable;
+            }
+
+            body {
+                /* Prevent content from shifting */
+                margin-right: 0;
+                /* Modern browsers */
+                overflow-x: hidden;
+            }
+
+            /* Optional: Style the scrollbar for better appearance */
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 6px;
+            }
+        </style>
+    </head>
+    <body class="bg-gray-200">
+        <div id="app">
+            <div class="container mx-auto px-4 py-8 max-w-6xl">
+                <!-- Header Section with updated colors -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h1
+                        class="text-3xl font-bold text-center text-gray-800 flex items-center justify-center gap-3"
+                    >
+                        <span class="flex items-center gap-2">
+                            <!-- Progress Arrow SVG -->
+                            <!-- <svg
+                                class="w-8 h-8"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="1 -1 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2.5"
+                                    d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                                />
+                            </svg> -->
+
+                            <!-- Favicon SVG -->
+                            <svg
+                                class="w-11 h-11"
+                                viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg"
+                            >
+                                <defs>
+                                    <linearGradient
+                                        id="heartFill"
+                                        gradientUnits="userSpaceOnUse"
+                                        x1="12"
+                                        y1="2"
+                                        x2="12"
+                                        y2="22"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stop-color="#f1f5f9"
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stop-color="#e2e8f0"
+                                        />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="greenGradient"
+                                        gradientUnits="userSpaceOnUse"
+                                        x1="6"
+                                        x2="18"
+                                        y1="9"
+                                        y2="9"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stop-color="#86efac"
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stop-color="#16a34a"
+                                        />
+                                    </linearGradient>
+                                    <linearGradient
+                                        id="redGradient"
+                                        gradientUnits="userSpaceOnUse"
+                                        x1="6"
+                                        x2="11"
+                                        y1="12"
+                                        y2="12"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stop-color="#ef4444"
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stop-color="#f97316"
+                                        />
+                                    </linearGradient>
+                                </defs>
+
+                                <path
+                                    d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                    fill="url(#heartFill)"
+                                    stroke="#94a3b8"
+                                    stroke-width="0.75"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                />
+
+                                <path
+                                    d="M6 9h12"
+                                    stroke="url(#greenGradient)"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                />
+                                <path
+                                    d="M6 12h5"
+                                    stroke="url(#redGradient)"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                />
+                            </svg>
+                            Total Points
+                        </span>
+                        <span
+                            class="bg-gray-800 text-white px-4 py-1 rounded-full text-lg"
+                        >
+                            {{ globalCounter }}
+                        </span>
+                    </h1>
+                    <!-- Date display with better styling -->
+                    <div class="mt-4 text-center">
+                        <span
+                            class="inline-flex items-center px-3 py-1 rounded-md bg-gray-100 text-gray-700 text-sm font-medium"
+                        >
+                            <svg
+                                class="w-4 h-4 mr-2"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                />
+                            </svg>
+                            {{ currentDate }}
+                        </span>
+                    </div>
+                    <!-- Global Progress Bar -->
+                    <div
+                        class="mt-4 bg-gray-200 rounded-full h-6 overflow-hidden"
+                    >
+                        <div
+                            class="h-full transition-all duration-300"
+                            :style="{ 
+                                width: getGlobalProgress() + '%',
+                                background: getProgressGradient(getGlobalProgress())
+                            }"
+                        >
+                            <span class="px-2 text-white text-sm"
+                                >{{ getGlobalProgress() }}%</span
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="flex gap-3 mb-6">
+                    <button
+                        class="px-4 py-2 text-white rounded-lg transition-colors"
+                        :class="isEditMode ? 'bg-gray-800' : 'bg-gray-600 hover:bg-gray-700'"
+                        @click="switchMode('edit')"
+                        :disabled="isEditMode"
+                    >
+                        <span class="flex items-center gap-2">
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                            </svg>
+                            Edit Mode
+                        </span>
+                    </button>
+                    <button
+                        class="px-4 py-2 text-white rounded-lg transition-colors"
+                        :class="currentView === 'progress' ? 'bg-gray-800' : 'bg-gray-600 hover:bg-gray-700'"
+                        @click="switchMode('progress')"
+                        :disabled="currentView === 'progress'"
+                    >
+                        <span class="flex items-center gap-2">
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M4 8h16M4 12h12M4 16h8"
+                                />
+                            </svg>
+                            Progress View
+                        </span>
+                    </button>
+                    <button
+                        class="px-4 py-2 text-white rounded-lg transition-colors"
+                        :class="currentView === 'graph' ? 'bg-gray-800' : 'bg-gray-600 hover:bg-gray-700'"
+                        @click="switchMode('graph')"
+                        :disabled="currentView === 'graph'"
+                    >
+                        <span class="flex items-center gap-2">
+                            <svg
+                                class="w-5 h-5"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                />
+                            </svg>
+                            Graph View
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Progress Bars Grid -->
+                <div
+                    v-if="!showGraphView"
+                    class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"
+                >
+                    <div
+                        v-for="(category, index) in sortedCategories"
+                        :key="category.name"
+                        class="bg-white rounded-xl shadow-lg overflow-hidden"
+                        :class="{ 'draggable': isEditMode }"
+                        :draggable="isEditMode"
+                        @dragstart="dragStart($event, 'category', index)"
+                        @dragend="dragEnd"
+                        @dragover.prevent
+                        @dragenter.prevent="dragEnter($event, 'category', index)"
+                        @dragleave.prevent="dragLeave($event, 'category')"
+                        @drop.prevent="drop($event, 'category', index)"
+                    >
+                        <div
+                            class="bg-gray-100 px-4 py-3 border-b border-gray-300"
+                        >
+                            <h3 class="font-semibold text-gray-800">
+                                {{ category.name }}
+                            </h3>
+                        </div>
+                        <div class="p-4">
+                            <div
+                                class="bg-gray-200 rounded-full h-4 overflow-hidden"
+                            >
+                                <div
+                                    class="h-full transition-all duration-300"
+                                    :style="{ 
+                                        width: getProgress(category) + '%',
+                                        background: getProgressGradient(getProgress(category))
+                                    }"
+                                ></div>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-2 text-center">
+                                {{ category.total }} / {{ getMaxPoints(category)
+                                }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories and Activities -->
+                <div
+                    v-if="!showGraphView"
+                    class="grid grid-cols-1 md:grid-cols-2 gap-6"
+                >
+                    <div
+                        v-for="(category, categoryIndex) in sortedCategories"
+                        :key="category.name"
+                        class="bg-white rounded-xl shadow-lg overflow-hidden"
+                        :class="{ 'draggable': isEditMode }"
+                        :draggable="isEditMode"
+                        @dragstart="dragStart($event, 'category', categoryIndex)"
+                        @dragend="dragEnd"
+                        @dragover.prevent
+                        @dragenter.prevent="dragEnter($event, 'category', categoryIndex)"
+                        @dragleave.prevent="dragLeave($event, 'category')"
+                        @drop.prevent="drop($event, 'category', categoryIndex)"
+                    >
+                        <div
+                            class="bg-gray-100 px-6 py-4 border-b border-gray-300 flex justify-between items-center"
+                        >
+                            <div class="flex items-center gap-4">
+                                <h3
+                                    class="text-lg font-semibold text-gray-800"
+                                    v-if="!category.isEditing"
+                                >
+                                    {{ category.name }}
+                                    <span
+                                        class="text-sm font-normal text-gray-600"
+                                    >
+                                        ({{ category.baseMaxPoints }} pts/day)
+                                    </span>
+                                </h3>
+                                <div v-else class="flex flex-col gap-2">
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-sm text-gray-600"
+                                            >Category Name:</label
+                                        >
+                                        <input
+                                            v-model="category.editName"
+                                            class="px-2 py-1 border rounded"
+                                            type="text"
+                                        />
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-sm text-gray-600"
+                                            >Daily Points:</label
+                                        >
+                                        <input
+                                            v-model="category.editBaseMaxPoints"
+                                            class="px-2 py-1 border rounded w-20"
+                                            type="number"
+                                            placeholder="pts/day"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <div v-if="isEditMode" class="flex gap-2">
+                                <button
+                                    v-if="!category.isEditing"
+                                    class="text-gray-700 hover:text-gray-800"
+                                    @click="startEdit(category)"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                        />
+                                    </svg>
+                                </button>
+                                <button
+                                    v-else
+                                    class="text-green-600 hover:text-green-700"
+                                    @click="saveEdit(category)"
+                                >
+                                    <svg
+                                        class="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                </button>
+                                <button
+                                    class="text-red-500 hover:text-red-700"
+                                    @click="deleteCategory(category)"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <table class="w-full">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th
+                                            class="px-4 py-2 text-left text-sm font-semibold text-gray-600"
+                                        >
+                                            Activity
+                                        </th>
+                                        <th
+                                            class="px-4 py-2 text-left text-sm font-semibold text-gray-600"
+                                        >
+                                            Points
+                                        </th>
+                                        <th
+                                            v-if="isEditMode"
+                                            class="px-4 py-2 text-left text-sm font-semibold text-gray-600"
+                                        >
+                                            Action
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-200">
+                                    <tr
+                                        v-for="(activity, activityIndex) in category.activities"
+                                        :key="activity.name"
+                                        :class="{ 'draggable': isEditMode }"
+                                        :draggable="isEditMode"
+                                        @dragstart.stop="dragStart($event, 'activity', activityIndex, categoryIndex)"
+                                        @dragend.stop="dragEnd($event)"
+                                        @dragover.prevent
+                                        @dragenter.prevent="dragEnter($event, 'activity', activityIndex, categoryIndex)"
+                                        @dragleave.prevent="dragLeave($event, 'activity')"
+                                        @drop.stop.prevent="drop($event, 'activity', activityIndex, categoryIndex)"
+                                    >
+                                        <td class="px-4 py-3">
+                                            <span v-if="!activity.isEditing"
+                                                >{{ activity.name }}</span
+                                            >
+                                            <input
+                                                v-else
+                                                v-model="activity.editName"
+                                                @keyup.enter="saveEdit(activity)"
+                                                @blur="saveEdit(activity)"
+                                                class="px-2 py-1 border rounded"
+                                                type="text"
+                                            />
+                                        </td>
+                                        <td class="px-4 py-3">
+                                            <div
+                                                class="flex items-center gap-2"
+                                            >
+                                                <button
+                                                    v-if="activity.value !== 0"
+                                                    :class="['point-button', activity.value > 0 ? 'point-button-add' : 'point-button-subtract']"
+                                                    @click="updatePoints(category, activity, activity.value)"
+                                                >
+                                                    <svg
+                                                        v-if="activity.value > 0"
+                                                        class="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                                        />
+                                                    </svg>
+                                                    <svg
+                                                        v-else
+                                                        class="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M17 12H5"
+                                                        />
+                                                    </svg>
+                                                    <span class="font-medium"
+                                                        >{{
+                                                        Math.abs(activity.value)
+                                                        }}</span
+                                                    >
+                                                </button>
+                                                <span
+                                                    class="text-gray-700 font-medium"
+                                                    >{{ activity.points }}</span
+                                                >
+                                            </div>
+                                        </td>
+                                        <!-- Edit/Delete Activity Buttons in Edit Mode -->
+                                        <td v-if="isEditMode" class="px-4 py-2">
+                                            <div class="flex gap-2">
+                                                <button
+                                                    v-if="!activity.isEditing"
+                                                    class="text-gray-700 hover:text-gray-800"
+                                                    @click="startEdit(activity)"
+                                                >
+                                                    <svg
+                                                        class="w-4 h-4"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    v-else
+                                                    class="text-green-600 hover:text-green-700"
+                                                    @click="saveEdit(activity)"
+                                                >
+                                                    <svg
+                                                        class="w-5 h-5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M5 13l4 4L19 7"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    class="text-red-500 hover:text-red-700"
+                                                    @click="deleteActivity(category, activity)"
+                                                >
+                                                    <svg
+                                                        class="w-5 h-5"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Forms -->
+                <div v-if="isEditMode && !showGraphView" class="mt-8 space-y-6">
+                    <!-- Add Category Form -->
+                    <div class="mb-3">
+                        <label
+                            for="newCategory"
+                            class="block text-sm font-medium text-gray-700"
+                            >New Category</label
+                        >
+                        <input
+                            type="text"
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm"
+                            id="newCategory"
+                            v-model="newCategoryName"
+                        />
+                        <div class="mt-2">
+                            <label
+                                for="categoryBaseMax"
+                                class="block text-sm font-medium text-gray-700"
+                                >Max Points per Day</label
+                            >
+                            <input
+                                type="number"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm"
+                                id="categoryBaseMax"
+                                v-model="newCategoryBaseMax"
+                            />
+                        </div>
+                        <button
+                            class="mt-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors add-button"
+                            @click="addCategory"
+                            :disabled="newCategoryBaseMax == 0"
+                        >
+                            Add
+                        </button>
+                    </div>
+                    <!-- Add Activity Form -->
+                    <div class="mb-3">
+                        <label
+                            for="categorySelect"
+                            class="block text-sm font-medium text-gray-700"
+                            >Category</label
+                        >
+                        <select
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm"
+                            id="categorySelect"
+                            v-model="selectedCategory"
+                        >
+                            <option
+                                v-for="category in categories"
+                                :key="category.name"
+                                :value="category"
+                            >
+                                {{ category.name }}
+                            </option>
+                        </select>
+                        <div class="mt-2">
+                            <label
+                                for="newActivity"
+                                class="block text-sm font-medium text-gray-700"
+                                >New Activity</label
+                            >
+                            <input
+                                type="text"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm"
+                                id="newActivity"
+                                v-model="newActivityName"
+                            />
+                        </div>
+                        <div class="mt-2">
+                            <label
+                                for="activityValue"
+                                class="block text-sm font-medium text-gray-700"
+                                >Points Value</label
+                            >
+                            <input
+                                type="number"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm"
+                                id="activityValue"
+                                v-model="newActivityValue"
+                            />
+                        </div>
+                        <button
+                            class="mt-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition-colors add-button"
+                            @click="addActivity"
+                            :disabled="newActivityValue === 0"
+                        >
+                            Add
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Graph View -->
+                <div v-if="showGraphView" class="space-y-6">
+                    <!-- Month Selection Dropdown -->
+                    <select
+                        class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none sm:text-sm mb-3"
+                        v-model="selectedMonth"
+                        @change="loadMonthData"
+                    >
+                        <option
+                            v-for="month in availableMonths"
+                            :key="month"
+                            :value="month"
+                        >
+                            {{ month }}
+                        </option>
+                    </select>
+                    <!-- Graphs for each category -->
+                    <div
+                        v-for="category in categories"
+                        :key="category.name"
+                        class="bg-white rounded-xl shadow-lg overflow-hidden"
+                    >
+                        <div
+                            class="bg-gray-100 px-6 py-4 border-b border-gray-200"
+                        >
+                            <h3 class="text-lg font-semibold text-gray-800">
+                                {{ category.name }}
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <canvas
+                                :id="'chart-' + sanitizeId(category.name)"
+                            ></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            const { createApp } = Vue
+
+            createApp({
+                data() {
+                    return {
+                        globalCounter: 0,
+                        categories: [],
+                        newCategoryName: '',
+                        newCategoryBaseMax: 0,
+                        selectedCategory: null,
+                        newActivityName: '',
+                        newActivityValue: 0,
+                        isEditMode: false,
+                        currentView: 'progress', // Add this line
+                        currentDate: new Date().toLocaleDateString(),
+                        selectedMonth: '',
+                        availableMonths: [],
+                        currentMonthKey: '',
+                        charts: {},
+                        draggedItem: null,
+                        draggedType: null,
+                        draggedCategoryIndex: null,
+                        monthStartDates: {}, // Add this new property
+                    }
+                },
+                computed: {
+                    sortedCategories() {
+                        return [...this.categories].sort(
+                            (a, b) => (a.order || 0) - (b.order || 0)
+                        )
+                    },
+                    showGraphView() {
+                        return this.currentView === 'graph'
+                    },
+                },
+                mounted() {
+                    this.currentMonthKey = this.formatMonthKey(new Date())
+                    this.availableMonths = this.getAvailableMonths()
+
+                    // Load or initialize month start dates
+                    const savedStartDates =
+                        localStorage.getItem('monthStartDates')
+                    this.monthStartDates = savedStartDates
+                        ? JSON.parse(savedStartDates)
+                        : {}
+
+                    if (!localStorage.getItem(this.currentMonthKey)) {
+                        this.selectedMonth = this.currentMonthKey
+                        // Record start date for new month
+                        if (!this.monthStartDates[this.currentMonthKey]) {
+                            this.monthStartDates[this.currentMonthKey] =
+                                new Date().getDate()
+                            localStorage.setItem(
+                                'monthStartDates',
+                                JSON.stringify(this.monthStartDates)
+                            )
+                        }
+                        this.saveData()
+                    } else {
+                        this.selectedMonth = this.availableMonths[0]
+                    }
+                    this.loadData()
+                },
+                methods: {
+                    addCategory() {
+                        if (
+                            this.newCategoryName &&
+                            this.newCategoryBaseMax != 0
+                        ) {
+                            if (
+                                this.categories.some(
+                                    cat => cat.name === this.newCategoryName
+                                )
+                            ) {
+                                alert(
+                                    'A category with this name already exists.'
+                                )
+                                return
+                            }
+                            // Check if the selected month is the current month
+                            const currentMonthKey = this.formatMonthKey(
+                                new Date()
+                            )
+                            if (this.selectedMonth !== currentMonthKey) {
+                                // If not, switch to the current month and load its data
+                                this.selectedMonth = currentMonthKey
+                                this.loadData()
+                            }
+                            const daysInMonth = this.getDaysInSelectedMonth()
+                            this.categories.push({
+                                name: this.newCategoryName,
+                                total: 0,
+                                baseMaxPoints: parseInt(
+                                    this.newCategoryBaseMax
+                                ),
+                                activities: [],
+                                dailyPoints: Array(daysInMonth).fill(0),
+                                order: this.categories.length, // Add order property
+                            })
+                            this.newCategoryName = ''
+                            this.newCategoryBaseMax = 0
+                            this.saveData()
+                        }
+                    },
+                    addActivity() {
+                        if (
+                            this.selectedCategory &&
+                            this.newActivityName &&
+                            this.newActivityValue !== 0
+                        ) {
+                            this.selectedCategory.activities.push({
+                                name: this.newActivityName,
+                                value: parseInt(this.newActivityValue),
+                                points: 0,
+                                buttonClass:
+                                    this.newActivityValue > 0
+                                        ? 'point-button-add'
+                                        : 'point-button-subtract',
+                                order: this.selectedCategory.activities.length, // Add order property
+                            })
+                            this.newActivityName = ''
+                            this.newActivityValue = 0
+                            this.saveData()
+                        }
+                    },
+
+                    updatePoints(category, activity, value) {
+                        const day = new Date().getDate() - 1 // Zero-based index for current day
+                        category.dailyPoints[day] += value
+                        category.total += value
+                        this.globalCounter += value
+                        activity.points += value
+                        this.saveData()
+                    },
+                    deleteActivity(category, activity) {
+                        if (
+                            confirm(
+                                `Are you sure you want to delete the activity "${activity.name}"?`
+                            )
+                        ) {
+                            category.total -= activity.points
+                            this.globalCounter -= activity.points
+                            const index = category.activities.indexOf(activity)
+                            if (index !== -1) {
+                                category.activities.splice(index, 1)
+                            }
+                            this.saveData()
+                        }
+                    },
+                    deleteCategory(category) {
+                        if (
+                            confirm(
+                                `Are you sure you want to delete the category "${category.name}" and all its activities?`
+                            )
+                        ) {
+                            this.globalCounter -= category.total
+                            const index = this.categories.indexOf(category)
+                            if (index !== -1) {
+                                this.categories.splice(index, 1)
+                            }
+                            this.saveData()
+                        }
+                    },
+
+                    refreshAvailableMonths() {
+                        this.availableMonths = this.getAvailableMonths()
+                    },
+
+                    saveData() {
+                        const data = {
+                            categories: this.categories,
+                            globalCounter: this.globalCounter,
+                        }
+                        localStorage.setItem(
+                            this.selectedMonth,
+                            JSON.stringify(data)
+                        )
+                        localStorage.setItem(
+                            'monthStartDates',
+                            JSON.stringify(this.monthStartDates)
+                        )
+                        this.refreshAvailableMonths()
+                        console.log('Saved data for', this.selectedMonth, data)
+                    },
+                    loadData() {
+                        try {
+                            const data = localStorage.getItem(
+                                this.selectedMonth
+                            )
+                            if (data) {
+                                const parsedData = JSON.parse(data)
+                                this.categories = parsedData.categories || []
+                                this.globalCounter =
+                                    parsedData.globalCounter || 0
+
+                                const daysInMonth =
+                                    this.getDaysInSelectedMonth()
+                                this.categories.forEach(category => {
+                                    if (
+                                        category.dailyPoints.length !==
+                                        daysInMonth
+                                    ) {
+                                        category.dailyPoints =
+                                            Array(daysInMonth).fill(0)
+                                    }
+                                })
+
+                                // Ensure order properties exist
+                                this.categories.forEach((category, idx) => {
+                                    if (typeof category.order === 'undefined') {
+                                        category.order = idx
+                                    }
+                                    category.activities.forEach(
+                                        (activity, actIdx) => {
+                                            if (
+                                                typeof activity.order ===
+                                                'undefined'
+                                            ) {
+                                                activity.order = actIdx
+                                            }
+                                        }
+                                    )
+                                })
+                            } else {
+                                this.categories = []
+                                this.globalCounter = 0
+                            }
+                        } catch (error) {
+                            console.error(
+                                'Error loading data for',
+                                this.selectedMonth,
+                                error
+                            )
+                            this.categories = []
+                            this.globalCounter = 0
+                        }
+                    },
+                    renderGraphs() {
+                        Vue.nextTick(() => {
+                            this.categories.forEach(category => {
+                                const canvasId =
+                                    'chart-' + this.sanitizeId(category.name)
+                                const canvasEl =
+                                    document.getElementById(canvasId)
+                                if (canvasEl) {
+                                    let ctx = canvasEl.getContext('2d')
+                                    if (this.charts[category.name]) {
+                                        this.charts[category.name].destroy()
+                                    }
+                                    this.charts[category.name] = new Chart(
+                                        ctx,
+                                        {
+                                            type: 'line',
+                                            data: {
+                                                labels: Array.from(
+                                                    {
+                                                        length: this.getDaysInSelectedMonth(),
+                                                    },
+                                                    (_, i) => i + 1
+                                                ),
+                                                datasets: [
+                                                    {
+                                                        label: 'Daily Points',
+                                                        data: category.dailyPoints,
+                                                        backgroundColor:
+                                                            'rgba(75, 192, 192, 0.2)',
+                                                        borderColor:
+                                                            'rgba(75, 192, 192, 1)',
+                                                        borderWidth: 1,
+                                                    },
+                                                ],
+                                            },
+                                            options: {
+                                                scales: {
+                                                    y: {
+                                                        beginAtZero: true,
+                                                    },
+                                                },
+                                            },
+                                        }
+                                    )
+                                } else {
+                                    console.error(
+                                        `Canvas not found for category: ${category.name}`
+                                    )
+                                }
+                            })
+                        })
+                    },
+                    formatMonthKey(date) {
+                        const year = date.getFullYear().toString()
+                        const month = ('0' + (date.getMonth() + 1)).slice(-2)
+                        return `${year}-${month}`
+                    },
+                    getAvailableMonths() {
+                        const keys = Object.keys(localStorage).filter(key =>
+                            key.match(/^\d{4}-\d{2}$/)
+                        )
+                        return keys.sort(
+                            (a, b) =>
+                                new Date(b.split('-')[0], b.split('-')[1] - 1) -
+                                new Date(a.split('-')[0], a.split('-')[1] - 1)
+                        )
+                    },
+                    getDaysInSelectedMonth() {
+                        const [yearShort, month] = this.selectedMonth.split('-')
+                        const year = parseInt('20' + yearShort) // Assuming years are in the 2000s
+                        const selectedDate = new Date(
+                            year,
+                            parseInt(month) - 1,
+                            1
+                        )
+                        return new Date(
+                            selectedDate.getFullYear(),
+                            selectedDate.getMonth() + 1,
+                            0
+                        ).getDate()
+                    },
+                    loadMonthData() {
+                        this.loadData()
+                        this.renderGraphs()
+                    },
+                    getProgress(category) {
+                        const maxPoints = this.getMaxPoints(category)
+                        if (maxPoints < 0) {
+                            // Reverse progress for negative maxPoints
+                            return 100 - (category.total / maxPoints) * 100
+                        } else {
+                            // Normal progress for positive maxPoints
+                            return (category.total / maxPoints) * 100
+                        }
+                    },
+                    getMaxPoints(category) {
+                        const currentDate = new Date()
+                        const monthKey = this.formatMonthKey(currentDate)
+                        let startDay = 1
+
+                        // If viewing current month and has start date
+                        if (
+                            this.selectedMonth === monthKey &&
+                            this.monthStartDates[monthKey]
+                        ) {
+                            startDay = this.monthStartDates[monthKey]
+                        }
+
+                        // Calculate available days from start to current date
+                        let availableDays
+                        if (this.selectedMonth === monthKey) {
+                            // For current month: use days from start to today
+                            availableDays = currentDate.getDate() - startDay + 1
+                        } else {
+                            // For past months: use days from start to month end
+                            const [year, month] = this.selectedMonth.split('-')
+                            const lastDayOfMonth = new Date(
+                                year,
+                                parseInt(month),
+                                0
+                            ).getDate()
+                            const monthStartDay =
+                                this.monthStartDates[this.selectedMonth] || 1
+                            availableDays = lastDayOfMonth - monthStartDay + 1
+                        }
+
+                        return category.baseMaxPoints * availableDays
+                    },
+                    sanitizeId(name) {
+                        return name
+                            .replace(/\s+/g, '-')
+                            .replace(/[^a-zA-Z0-9-]/g, '')
+                    },
+                    getGlobalProgress() {
+                        const maxPoints = this.categories
+                            .filter(category => category.baseMaxPoints > 0)
+                            .reduce(
+                                (sum, category) =>
+                                    sum + this.getMaxPoints(category),
+                                0
+                            )
+                        if (maxPoints <= 0) return 0
+                        const progress = (this.globalCounter / maxPoints) * 100
+                        return Math.max(0, Math.round(progress))
+                    },
+                    // Add this new method
+                    getProgressGradient(progress) {
+                        const p = progress / 100
+                        if (p <= 0.2) {
+                            // Pure red to orange-red
+                            const t = p / 0.2
+                            return `linear-gradient(90deg, 
+                                rgb(239, 68, 68) 0%,
+                                rgb(241, 80, 56) 50%,
+                                rgb(244, 91, 45) 100%)`
+                        } else if (p <= 0.3) {
+                            // Orange-red to orange
+                            const t = (p - 0.2) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(244, 91, 45) 0%,
+                                rgb(246, 102, 34) 50%,
+                                rgb(249, 115, 22) 100%)`
+                        } else if (p <= 0.4) {
+                            // Orange to light orange
+                            const t = (p - 0.3) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(249, 115, 22) 0%,
+                                rgb(242, 147, 15) 50%,
+                                rgb(234, 179, 8) 100%)`
+                        } else if (p <= 0.5) {
+                            // Light orange to yellow
+                            const t = (p - 0.4) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(234, 179, 8) 0%,
+                                rgb(220, 182, 12) 50%,
+                                rgb(206, 185, 16) 100%)`
+                        } else if (p <= 0.6) {
+                            // Yellow to yellow-green
+                            const t = (p - 0.5) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(206, 185, 16) 0%,
+                                rgb(183, 191, 15) 50%,
+                                rgb(160, 198, 14) 100%)`
+                        } else if (p <= 0.7) {
+                            // Yellow-green to light green
+                            const t = (p - 0.6) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(160, 198, 14) 0%,
+                                rgb(146, 201, 18) 50%,
+                                rgb(132, 204, 22) 100%)`
+                        } else if (p <= 0.8) {
+                            // Light green to medium green
+                            const t = (p - 0.7) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(132, 204, 22) 0%,
+                                rgb(108, 202, 40) 50%,
+                                rgb(83, 200, 58) 100%)`
+                        } else if (p <= 0.9) {
+                            // Medium green to green
+                            const t = (p - 0.8) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(83, 200, 58) 0%,
+                                rgb(59, 199, 76) 50%,
+                                rgb(34, 197, 94) 100%)`
+                        } else if (p < 1) {
+                            // Green to dark green
+                            const t = (p - 0.9) / 0.1
+                            return `linear-gradient(90deg, 
+                                rgb(34, 197, 94) 0%,
+                                rgb(22, 189, 90) 50%,
+                                rgb(10, 181, 86) 100%)`
+                        } else {
+                            // Pure dark green at 100%
+                            return 'rgb(10, 181, 86)'
+                        }
+                    },
+                    // Add drag and drop methods
+                    dragStart(event, type, index, categoryIndex = null) {
+                        this.draggedItem = index
+                        this.draggedType = type
+                        this.draggedCategoryIndex = categoryIndex
+                        event.target
+                            .closest(
+                                this.draggedType === 'category'
+                                    ? '.draggable'
+                                    : 'tr'
+                            )
+                            .classList.add('ghost')
+                    },
+                    dragEnd(event) {
+                        const element = event.target.closest(
+                            this.draggedType === 'category'
+                                ? '.draggable'
+                                : 'tr'
+                        )
+                        if (element) {
+                            element.classList.remove('ghost')
+                        }
+                        this.draggedItem = null
+                        this.draggedType = null
+                        this.draggedCategoryIndex = null
+                    },
+                    dragEnter(event, type, index, categoryIndex = null) {
+                        if (this.draggedType !== type) return
+                        if (
+                            this.draggedType === 'activity' &&
+                            this.draggedCategoryIndex !== categoryIndex
+                        )
+                            return
+
+                        if (type === 'category') {
+                            const container = event.target.closest('.draggable')
+                            if (container) {
+                                container.classList.add('drag-over-category')
+                            }
+                        } else {
+                            const element = event.target.closest('tr')
+                            if (element) {
+                                element.classList.add('drag-over')
+                            }
+                        }
+                    },
+                    dragLeave(event, type) {
+                        if (this.draggedType === 'category') {
+                            const container = event.target.closest('.draggable')
+                            if (
+                                container &&
+                                (!event.relatedTarget ||
+                                    !container.contains(event.relatedTarget))
+                            ) {
+                                container.classList.remove('drag-over-category')
+                            }
+                        } else {
+                            const element = event.target.closest('tr')
+                            if (element) {
+                                element.classList.remove('drag-over')
+                            }
+                        }
+                    },
+                    drop(event, type, index, categoryIndex = null) {
+                        if (type === 'category') {
+                            const container = event.target.closest('.draggable')
+                            if (container) {
+                                container.classList.remove('drag-over-category')
+                            }
+                        } else {
+                            const element = event.target.closest('tr')
+                            if (element) {
+                                element.classList.remove('drag-over')
+                            }
+                        }
+
+                        if (this.draggedType !== type) return
+
+                        if (type === 'category') {
+                            const item = this.categories.splice(
+                                this.draggedItem,
+                                1
+                            )[0]
+                            this.categories.splice(index, 0, item)
+                            this.categories.forEach((category, idx) => {
+                                category.order = idx
+                            })
+                        } else if (
+                            type === 'activity' &&
+                            categoryIndex === this.draggedCategoryIndex
+                        ) {
+                            const category = this.categories[categoryIndex]
+                            const item = category.activities.splice(
+                                this.draggedItem,
+                                1
+                            )[0]
+                            category.activities.splice(index, 0, item)
+                            category.activities.forEach((activity, idx) => {
+                                activity.order = idx
+                            })
+                        }
+
+                        this.saveData()
+                    },
+                    startEdit(item) {
+                        if (item.isEditing) return // Prevent starting edit if already editing
+
+                        // Cancel any other ongoing edits in the same category
+                        if ('value' in item) {
+                            // This is an activity
+                            const category = this.categories.find(cat =>
+                                cat.activities.includes(item)
+                            )
+                            if (category) {
+                                category.activities.forEach(activity => {
+                                    if (
+                                        activity !== item &&
+                                        activity.isEditing
+                                    ) {
+                                        this.saveEdit(activity)
+                                    }
+                                })
+                            }
+                        } else {
+                            // This is a category
+                            this.categories.forEach(category => {
+                                if (category !== item && category.isEditing) {
+                                    this.saveEdit(category)
+                                }
+                            })
+                        }
+
+                        item.isEditing = true
+                        item.editName = item.name
+                        if ('baseMaxPoints' in item) {
+                            item.editBaseMaxPoints = item.baseMaxPoints
+                        }
+                    },
+
+                    saveEdit(item) {
+                        if (!item.isEditing) return
+
+                        if (item.editName && item.editName.trim() !== '') {
+                            item.name = item.editName.trim()
+                            if ('editBaseMaxPoints' in item) {
+                                const newMaxPoints = parseInt(
+                                    item.editBaseMaxPoints
+                                )
+                                if (
+                                    !isNaN(newMaxPoints) &&
+                                    newMaxPoints !== item.baseMaxPoints
+                                ) {
+                                    item.baseMaxPoints = newMaxPoints
+                                    this.recalculateGlobalCounter()
+                                }
+                            }
+                        }
+                        item.isEditing = false
+                        delete item.editName
+                        delete item.editBaseMaxPoints
+                        this.saveData()
+                    },
+                    recalculateGlobalCounter() {
+                        this.globalCounter = this.categories.reduce(
+                            (sum, category) => {
+                                return sum + category.total
+                            },
+                            0
+                        )
+                    },
+                    switchMode(mode) {
+                        if (mode === 'edit') {
+                            this.isEditMode = true
+                            this.currentView = 'edit'
+                        } else {
+                            // First switch the view
+                            this.currentView = mode
+                            // Then disable edit mode
+                            this.isEditMode = false
+
+                            // If switching to graph view, render the graphs after a short delay
+                            if (mode === 'graph') {
+                                Vue.nextTick(() => {
+                                    this.loadMonthData()
+                                })
+                            }
+                        }
+                    },
+                },
+                watch: {
+                    isEditMode(newValue) {
+                        if (!newValue) {
+                            // When exiting edit mode, save any ongoing edits
+                            this.categories.forEach(category => {
+                                if (category.isEditing) {
+                                    this.saveEdit(category)
+                                }
+                            })
+                        }
+                    },
+                },
+            }).mount('#app')
+        </script>
+    </body>
+</html>
