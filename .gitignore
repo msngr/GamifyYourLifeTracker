@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Build output
+dist/
+build/
+out/
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+
+# Coverage and test
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+
+# Database files
+*.sqlite
+*.db
