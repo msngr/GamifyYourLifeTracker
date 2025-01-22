@@ -26,7 +26,7 @@ Gamify Your Life Tracker is a web application that helps you track and manage yo
     git clone https://github.com/yourusername/gamify-your-life-tracker.git
     ```
 
-2. Open [GamifyYourLifeTracker.html](http://_vscodecontentref_/0) in your web browser to start using the app.
+2. Open [index.html](http://_vscodecontentref_/0) in your web browser to start using the app.
 
 ## Usage
 
